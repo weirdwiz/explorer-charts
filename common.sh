@@ -3,7 +3,7 @@
 CURRENT_CONTEXT_NAME="$(kubectl config current-context view)"
 PLATFORM="self-managed"
 
-autoDetectEnvironment(){
+autoDetectEnvironment() {
 	if [[ -z "$CURRENT_CONTEXT_NAME" ]]; then
 		echo "no configuration has been provided"
 		return
@@ -18,10 +18,15 @@ autoDetectEnvironment(){
 		PLATFORM="kind"
 	elif [[ $CURRENT_CONTEXT_NAME =~ ^k3d-.* ]]; then
 		PLATFORM="k3d"
+	elif [[ $CURRENT_CONTEXT_NAME =~ ^kubernetes-.* ]]; then
+		PLATFORM="self-managed"
+	else
+		echo "No k8s cluster configured or unknown env!"
+		exit 2
 	fi
 }
 
-handleKubearmor(){
+handleKubearmor() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	echo "$1 Kubearmor on $PLATFORM Kubernets Cluster"
 	case $PLATFORM in
@@ -45,11 +50,11 @@ handleKubearmor(){
 			;;
 		*)
 			echo "Unrecognised platform: $PLATFORM"
+			;;
 	esac
 }
 
-handleKnoxAutoPolicy()
-{
+handleKnoxAutoPolicy() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	KNOXAUTOPOLICY_REPO="https://raw.githubusercontent.com/accuknox/knoxAutoPolicy-deployment/main/k8s"
 	KNOXAUTOPOLICY_SVC="$KNOXAUTOPOLICY_REPO/service.yaml --namespace explorer"
@@ -64,13 +69,13 @@ handleKnoxAutoPolicy()
 	kubectl $1 -f $KNOXAUTOPOLICY_SA
 }
 
-handlePrometheusAndGrafana(){
+handlePrometheusAndGrafana() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	echo "$1 prometheus and grafana on $PLATFORM Kubernetes Cluster"
-	kubectl $1 -f https://raw.githubusercontent.com/kubearmor/kubearmor-prometheus-exporter/main/deployments/prometheus/prometheus-grafana-deployment.yaml &> /dev/null
+	kubectl $1 -f https://raw.githubusercontent.com/kubearmor/kubearmor-prometheus-exporter/main/deployments/prometheus/prometheus-grafana-deployment.yaml &>/dev/null
 }
 
-handleLocalStorage(){
+handleLocalStorage() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	echo "$1 Local Storage on $PLATFORM Kubernetes Cluster"
 	case $PLATFORM in
@@ -79,18 +84,18 @@ handleLocalStorage(){
 			;;
 		*)
 			echo "Skipping..."
+			;;
 	esac
 }
 
-handleKubearmorPrometheusClient(){
+handleKubearmorPrometheusClient() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	echo "$1 Kubearmor Metrics Exporter on $PLATFORM Kubernetes Cluster"
 	kubectl $1 -f https://raw.githubusercontent.com/kubearmor/kubearmor-prometheus-exporter/main/deployments/exporter-deployment.yaml
 }
 
-handleSpire(){
+handleSpire() {
 	[[ "$1" == "" ]] && echo "no operation specified, specify apply/delete" && return 1
 	echo "$1 Spire on $PLATFORM Kubernetes Cluster"
 	kubectl $1 -f ./spire/spire.yaml
 }
-
